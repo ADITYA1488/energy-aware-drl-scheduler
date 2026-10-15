@@ -4,28 +4,33 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 st.set_page_config(
-    page_title="Custom Energy-Aware CPU Scheduler",
+    page_title="Energy-Aware DRL CPU Scheduler",
     page_icon="⚡",
     layout="wide",
 )
 
-st.title("⚡ Customizable OS CPU Scheduler Benchmark")
+st.title("⚡ Research-Enhanced DRL OS CPU Scheduler")
 st.markdown(
     """
-Configure any CPU profile below to benchmark the DRL C-Engine scheduler against 
-the Linux `performance` governor for custom hardware configurations.
+Benchmark a C-native DRL scheduler incorporating **power capping**, **multi-deadline slack tracking**, 
+and **joint cluster/DVFS control** against baseline Linux governor policies.
 """
 )
 
 # --- Sidebar Controls ---
-st.sidebar.header("⚙️ Target Hardware Config")
+st.sidebar.header("⚙️ System & Research Configuration")
 
 preset = st.sidebar.selectbox(
-    "Load Hardware Preset",
-    ["Custom", "Raspberry Pi 4 (5W)", "Mobile / ARM big.LITTLE (15W)", "Desktop CPU (65W)"],
+    "Hardware Preset",
+    [
+        "Custom",
+        "Raspberry Pi 4 (5W Edge)",
+        "Mobile ARM big.LITTLE (15W)",
+        "Desktop CPU (65W)",
+    ],
 )
 
-if preset == "Raspberry Pi 4 (5W)":
+if preset == "Raspberry Pi 4 (5W Edge)":
     default_pwr = 5.0
 elif preset == "Desktop CPU (65W)":
     default_pwr = 65.0
@@ -33,8 +38,11 @@ else:
     default_pwr = 15.0
 
 max_power = st.sidebar.slider("CPU Peak TDP (Watts)", 1.0, 100.0, default_pwr)
+power_cap = st.sidebar.slider(
+    "Dynamic Power Cap Ratio (%) [Wang et al.]", 30, 100, 80
+)
 initial_queue = st.sidebar.slider("Initial Task Queue Load", 0.0, 1.0, 0.5)
-sim_steps = st.sidebar.slider("Simulation Duration (Steps)", 50, 500, 100)
+sim_steps = st.sidebar.slider("Simulation Timesteps", 50, 500, 100)
 
 c_binary = "./scheduler"
 c_source = "main.c"
@@ -62,22 +70,28 @@ with st.sidebar:
     else:
         st.error(f"Compilation Error:\n{msg}")
 
-    run_btn = st.button("🚀 Run Custom Hardware Simulation", type="primary")
+    run_btn = st.button("🚀 Run Research Benchmark", type="primary")
 
-# --- Simulation Execution & Output ---
+# --- Simulation Execution ---
 col1, col2 = st.columns([1, 1])
 
 if run_btn:
     if not compiled:
         st.error("Cannot run simulation because C compilation failed.")
     else:
-        # Pass custom sidebar values directly as CLI arguments to the C binary
-        cmd = [c_binary, str(max_power), str(initial_queue), str(sim_steps)]
+        # Pass parameters including power cap to C binary
+        cmd = [
+            c_binary,
+            str(max_power),
+            str(initial_queue),
+            str(sim_steps),
+            str(power_cap),
+        ]
         result = subprocess.run(cmd, capture_output=True, text=True)
         raw_output = result.stdout
 
         with col1:
-            st.subheader("🖥️ C Execution Output")
+            st.subheader("🖥️ C Engine Runtime Console")
             st.code(raw_output, language="bash")
 
         perf_power = None
@@ -86,28 +100,39 @@ if run_btn:
 
         for line in raw_output.split("\n"):
             if "Performance Governor Cumulative Energy:" in line:
-                perf_power = float(line.split(":")[-1].replace("Joules", "").strip())
+                perf_power = float(
+                    line.split(":")[-1].replace("Joules", "").strip()
+                )
             elif "DRL C Scheduler Cumulative Energy:" in line:
-                drl_power = float(line.split(":")[-1].replace("Joules", "").strip())
+                drl_power = float(
+                    line.split(":")[-1].replace("Joules", "").strip()
+                )
             elif "Energy Improvement:" in line:
                 savings = float(line.split(":")[-1].replace("%", "").strip())
 
         with col2:
-            st.subheader("📊 Performance Analysis")
+            st.subheader("📊 Comparative Energy Analysis")
 
             if perf_power is not None and drl_power is not None:
                 m1, m2 = st.columns(2)
                 m1.metric("Linux Performance Governor", f"{perf_power:.2f} J")
-                m2.metric("DRL C-Engine Scheduler", f"{drl_power:.2f} J", delta=f"-{savings:.1f}% Energy")
+                m2.metric(
+                    "DRL C-Engine Scheduler",
+                    f"{drl_power:.2f} J",
+                    delta=f"-{savings:.1f}% Energy",
+                )
 
                 fig, ax = plt.subplots(figsize=(6, 4))
-                categories = ["Performance Governor", "DRL C Scheduler"]
+                categories = [
+                    "Performance Governor",
+                    f"DRL C Scheduler ({power_cap}% Cap)",
+                ]
                 energies = [perf_power, drl_power]
                 colors = ["#d62728", "#1f77b4"]
 
-                bars = ax.bar(categories, energies, color=colors, width=0.5)
+                bars = ax.bar(categories, energies, color=colors, width=0.45)
                 ax.set_ylabel("Cumulative Energy Consumption (Joules)")
-                ax.set_title(f"Energy Draw Comparison ({max_power}W Profile)")
+                ax.set_title(f"Energy Benchmark ({max_power}W Profile)")
                 ax.grid(axis="y", linestyle="--", alpha=0.5)
 
                 for bar in bars:
@@ -124,13 +149,15 @@ if run_btn:
                 st.pyplot(fig)
 else:
     with col1:
-        st.info("👈 Adjust CPU profile parameters in the sidebar and click **Run Custom Hardware Simulation**.")
+        st.info(
+            "👈 Adjust target hardware parameters and power caps in the sidebar, then click **Run Research Benchmark**."
+        )
     with col2:
         st.markdown(
             """
-        ### Hardware Customization Capabilities
-        * **Adjustable TDP Limits:** Test low-power IoT chips (5W) up to high-performance desktop silicon (65W+).
-        * **Variable Workload Backlogs:** Model initial task queue pressure across dynamic burst loads.
-        * **Real-time C Argument Injection:** Streams runtime configuration directly into native compiled binary memory.
+        ### Active Research Integration Features
+        * **Workload-Phase Power Capping:** Dynamically constrains CPU power draw to user-specified ceilings [Wang et al. 2022].
+        * **Multi-Deadline Slack Tracking:** Evaluates queue urgency to prevent latency violations [Li et al. 2025].
+        * **Joint Cluster & Operating Point Control:** Maps discrete core choice and uncore frequency in a single feed-forward step [Wang 2025].
         """
         )
