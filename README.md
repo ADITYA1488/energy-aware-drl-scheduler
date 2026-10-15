@@ -10,3 +10,9 @@ This project presents a simulation prototype for dynamic CPU core scheduling on 
 
 ## Benchmark Results
 ![Benchmark Results](benchmark_results.png)
+
+# Energy-Aware Adaptive CPU Scheduling for Heterogeneous Devices (DRL)
+
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://YOUR-STREAMLIT-APP-LINK.streamlit.app)
+
+> **Live Demo:** Access the interactive web dashboard [here](https://YOUR-STREAMLIT-APP-LINK.streamlit.app).
