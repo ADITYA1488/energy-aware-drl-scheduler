@@ -16,8 +16,9 @@ typedef struct {
     float total_power;      // Cumulative energy tracker (Joules)
 } SystemState;
 
-float relu(float x) {
-    return x > 0.0f ? x : 0.0f;
+float tanh_activation(float x)
+{
+    return tanhf(x);
 }
 
 // Zero-Overhead Forward Pass Inference (Zhou & Lin 2023)
@@ -32,7 +33,7 @@ int infer_drl_action(float queue, float temp, float core) {
         for (int j = 0; j < INPUT_DIM; j++) {
             sum += W1[i][j] * input[j];
         }
-        h1[i] = relu(sum);
+        h1[i] = tanh_activation(sum);
     }
 
     for (int i = 0; i < HIDDEN_DIM; i++) {
@@ -40,7 +41,7 @@ int infer_drl_action(float queue, float temp, float core) {
         for (int j = 0; j < HIDDEN_DIM; j++) {
             sum += W2[i][j] * h1[j];
         }
-        h2[i] = relu(sum);
+        h2[i] = tanh_activation(sum);
     }
 
     int best_action = 0;
