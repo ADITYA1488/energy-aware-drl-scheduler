@@ -1,0 +1,6 @@
+.venv/
+.idea/
+*.exe
+*.o
+__pycache__/
+*.pyc
