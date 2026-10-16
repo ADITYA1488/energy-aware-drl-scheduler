@@ -1,6 +1,6 @@
 ﻿
 #include "drl_scheduler.h"
-
+#include <stdio.h>
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
@@ -19,7 +19,7 @@ static const double POWER_RATIOS[ACTION_COUNT] = {
  * These are initial model assumptions, not measured CPU frequencies.
  */
 static const double WORK_RATES[ACTION_COUNT] = {
-    0.25, 0.50, 0.75, 1.00
+    0.20, 0.40, 0.70, 1.00
 };
 
 static const double TEMP_RISE[ACTION_COUNT] = {
@@ -129,6 +129,13 @@ int scheduler_run_drl(
             queue_load,
             (float)temperature,
             (float)active_core);
+        
+        printf("tick=%llu queue=%.2f temp=%.2f core=%.0f action=%d\n",
+       (unsigned long long)tick,
+       queue_load,
+       temperature,
+       active_core,
+       action);
 
         if (action < 0 || action >= ACTION_COUNT) {
             return -1;
